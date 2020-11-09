@@ -1,5 +1,6 @@
 # MMCLogger-Sponge
-
+This fork adds in continuous logging of player information (location, inventory, health, hunger) to a separate log file.
+There is currently no configuration for this.
 # Features
 - Log all chat interactions
 - Log all commands
