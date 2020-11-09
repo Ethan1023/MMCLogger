@@ -29,6 +29,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import java.util.concurrent.TimeUnit;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
+
 @Plugin(id = "mmclogger", name = "MMCLogger", version = "1.7.3", authors = {"Leelawd93"})
 public class Main {
 
@@ -77,7 +81,39 @@ public class Main {
                 .build();
         cmdManager.register(this, viewLog, "viewchatlogs", "vcl");
         //scheduler.createTaskBuilder().execute(this::checkDate).interval(1, TimeUnit.SECONDS).name("mmclogger-S-DateChecker").submit(this);
+        scheduler.createTaskBuilder().execute(this::logPos).interval(5, TimeUnit.SECONDS).name("mmclogger-S-PositionLogger").submit(this);
     }
+
+    private void logPos() {
+	//logger.info("Getting Locations");
+	if(Sponge.isServerAvailable()){
+		Collection players = Sponge.getServer().getOnlinePlayers();
+		Iterator<Player> iterator = players.iterator();
+		while(iterator.hasNext()){
+			Player player = iterator.next();
+			String name = player.getName();
+			Location<World> location = player.getLocation();
+			int x = location.getBlockX();
+			int y = location.getBlockY();
+			int z = location.getBlockZ();
+			String worldName = location.getExtent().getName();
+			String date = getDate();
+			//logger.info("Player " + player.getName() + " is in " + worldName + " at " + x + " " + y + " " + z);
+		        File posFile = new File(logFolder, getFileDate() + "-position.log");
+		        String log = "slots filled = " + player.getInventory().size() + ", health = " + player.health().get() + ", hunger = " + player.foodLevel().get() + ", saturation = " + player.saturation().get();
+			try{
+				String[] content = formatLog(name, log, x, y, z, worldName, date);
+				scheduler.createTaskBuilder().execute(new WriteFile(content, posFile)).async().name("mmclogger-A-logPlayerPosition").submit(this);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+	}else{
+		logger.info("Server Not Available!");
+	}
+    }
+
 
     @Listener
     public void onServerStart(GameStartedServerEvent event) throws IOException {
